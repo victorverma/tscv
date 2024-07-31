@@ -16,7 +16,7 @@ class TimeSeriesCrossValidator:
         self.preprocessor = preprocessor
         self.max_workers = max_workers
 
-    def split(self, x, y):
+    def _split(self, x, y):
         """Generate indices for splitting data into training and test sets."""
         splits = []
         for train_start, train_size, test_size in zip(self.train_starts, self.train_sizes, self.test_sizes):
@@ -27,7 +27,7 @@ class TimeSeriesCrossValidator:
             splits.append((train_indices, test_indices))
         return splits
 
-    def evaluate(self, y_test, y_pred, metrics):
+    def _evaluate(self, y_test, y_pred, metrics):
         """Evaluate predictions from the fitted model using specified metrics."""
         evaluation = {}
         for metric in metrics:
@@ -44,7 +44,7 @@ class TimeSeriesCrossValidator:
             x_test = self.preprocessor.transform(x_test)
         model.fit(x_train, y_train)
         y_pred = model.predict(x_test)
-        return self.evaluate(y_test, y_pred, metrics)
+        return self._evaluate(y_test, y_pred, metrics)
 
     def cross_validate(self, model, x, y, metrics):
         """Fit the model, make predictions, and calculate metrics."""
@@ -56,7 +56,7 @@ class TimeSeriesCrossValidator:
         for index, metric in enumerate(metrics):
             if not (hasattr(metric, "evaluate") and callable(getattr(metric, "evaluate"))):
                 raise TypeError(f"metric {index} must have an 'evaluate' method.")
-        splits = self.split(x, y)
+        splits = self._split(x, y)
         evaluations = []
         with ProcessPoolExecutor(max_workers=self.max_workers, mp_context=get_context("fork")) as executor:
             future_to_split = {executor.submit(self._process_split, split, x, y, model, metrics): split for split in splits}
