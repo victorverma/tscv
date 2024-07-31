@@ -1,46 +1,12 @@
-from abc import ABC, abstractmethod
-
-class Preprocessor(ABC):
-    """Abstract base class for preprocessors."""
-    @abstractmethod
-    def fit(self, X):
-        """Fit the preprocessor to the data."""
-        pass
-    
-    @abstractmethod
-    def transform(self, X):
-        """Transform the data."""
-        pass
-
-    def fit_transform(self, X):
-        """Fit to the data, then transform it."""
-        self.fit(X)
-        return self.transform(X)
-
-class Model(ABC):
-    """Abstract base class for models."""
-    @abstractmethod
-    def fit(self, X, y):
-        """Fit the model to the data."""
-        pass
-    
-    @abstractmethod
-    def predict(self, X):
-        """Predict using the model."""
-        pass
-
-class Metric(ABC):
-    """Abstract base class for metrics."""
-    @abstractmethod
-    def evaluate(self, y_test, y_pred):
-        """Evaluate the predictions."""
-        pass
-
 class TimeSeriesCrossValidator:
     """Time series cross-validation framework."""
     def __init__(self, train_starts, train_sizes, test_sizes, preprocessor=None):
         if not (len(train_starts) == len(train_sizes) == len(test_sizes)):
             raise ValueError("train_starts, train_sizes, and test_sizes must have the same length.")
+        if preprocessor is not None:
+            if not (hasattr(preprocessor, "fit_transform") and callable(getattr(preprocessor, "fit_transform")) and
+                    hasattr(preprocessor, "transform") and callable(getattr(preprocessor, "transform"))):
+                raise TypeError("preprocessor must have 'fit_transform' and 'transform' methods.")
         self.train_starts = train_starts
         self.train_sizes = train_sizes
         self.test_sizes = test_sizes
@@ -66,9 +32,14 @@ class TimeSeriesCrossValidator:
 
     def cross_validate(self, model, X, y, metrics):
         """Fit the model, make predictions, and calculate metrics."""
+        if not (hasattr(model, "fit") and callable(getattr(model, "fit")) and
+                hasattr(model, "predict") and callable(getattr(model, "predict"))):
+            raise TypeError("model must have 'fit' and 'predict' methods.")
         if not metrics:
-            raise ValueError("At least one metric must be provided.")
-        
+            raise ValueError("at least one metric must be provided.")
+        for index, metric in enumerate(metrics):
+            if not (hasattr(metric, "evaluate") and callable(getattr(metric, "evaluate"))):
+                raise TypeError(f"metric {index} must have an 'evaluate' method.")
         evaluations = []
         for train_indices, test_indices in self.split(X, y):
             X_train, X_test = X[train_indices], X[test_indices]
