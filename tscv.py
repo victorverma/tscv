@@ -7,9 +7,10 @@ class TimeSeriesCrossValidator:
         if not (len(train_starts) == len(train_sizes) == len(test_sizes)):
             raise ValueError("train_starts, train_sizes, and test_sizes must have the same length.")
         if preprocessor is not None:
-            if not (hasattr(preprocessor, "fit_transform") and callable(getattr(preprocessor, "fit_transform")) and
-                    hasattr(preprocessor, "transform") and callable(getattr(preprocessor, "transform"))):
-                raise TypeError("preprocessor must have 'fit_transform' and 'transform' methods.")
+            if not (hasattr(preprocessor, "fit_transform") and callable(preprocessor.fit_transform)):
+                raise TypeError("preprocessor must have a 'fit_transform' method.")
+            if not (hasattr(preprocessor, "transform") and callable(preprocessor.transform)):
+                raise TypeError("preprocessor must have a 'transform' method.")
         self.train_starts = train_starts
         self.train_sizes = train_sizes
         self.test_sizes = test_sizes
@@ -48,14 +49,15 @@ class TimeSeriesCrossValidator:
 
     def cross_validate(self, model, x, y, metrics):
         """Fit the model, make predictions, and calculate metrics."""
-        if not (hasattr(model, "fit") and callable(getattr(model, "fit")) and
-                hasattr(model, "predict") and callable(getattr(model, "predict"))):
-            raise TypeError("model must have 'fit' and 'predict' methods.")
+        if not (hasattr(model, "fit") and callable(model.fit)):
+            raise TypeError("model must have a 'fit' method.")
+        if not (hasattr(model, "predict") and callable(model.predict)):
+            raise TypeError("model must have a 'predict' method.")
         if not metrics:
             raise ValueError("at least one metric must be provided.")
-        for index, metric in enumerate(metrics):
-            if not (hasattr(metric, "evaluate") and callable(getattr(metric, "evaluate"))):
-                raise TypeError(f"metric {index} must have an 'evaluate' method.")
+        for metric in metrics:
+            if not (hasattr(metric, "evaluate") and callable(metric.evaluate)):
+                raise TypeError(f"{metric.__class__} must have an 'evaluate' method.")
         splits = self._split(x, y)
         evaluations = []
         with ProcessPoolExecutor(max_workers=self.max_workers, mp_context=get_context("fork")) as executor:
