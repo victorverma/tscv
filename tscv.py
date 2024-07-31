@@ -24,7 +24,7 @@ class TimeSeriesCrossValidator:
         return splits
 
     def evaluate(self, y_test, y_pred, metrics):
-        """Evaluate predictions from the fitted model using specified metrics."""        
+        """Evaluate predictions from the fitted model using specified metrics."""
         evaluation = {}
         for metric in metrics:
             evaluation[metric.__class__.__name__] = metric.evaluate(y_test, y_pred)
@@ -50,5 +50,5 @@ class TimeSeriesCrossValidator:
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
             evaluation = self.evaluate(y_test, y_pred, metrics)
-            evaluations.append(evaluation)        
+            evaluations.append(evaluation)
         return evaluations
