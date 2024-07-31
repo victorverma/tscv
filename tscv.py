@@ -57,7 +57,7 @@ class TimeSeriesCrossValidator:
             raise ValueError("at least one metric must be provided.")
         for metric in metrics:
             if not (hasattr(metric, "evaluate") and callable(metric.evaluate)):
-                raise TypeError(f"{metric.__class__} must have an 'evaluate' method.")
+                raise TypeError(f"{metric.__class__.__name__} must have an 'evaluate' method.")
         splits = self._split(x, y)
         evaluations = []
         with ProcessPoolExecutor(max_workers=self.max_workers, mp_context=get_context("fork")) as executor:
