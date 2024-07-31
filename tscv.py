@@ -12,11 +12,11 @@ class TimeSeriesCrossValidator:
         self.test_sizes = test_sizes
         self.preprocessor = preprocessor
 
-    def split(self, X, y):
+    def split(self, x, y):
         """Generate indices for splitting data into training and test sets."""
         splits = []
         for train_start, train_size, test_size in zip(self.train_starts, self.train_sizes, self.test_sizes):
-            if train_start + train_size + test_size > len(X):
+            if train_start + train_size + test_size > len(x):
                 raise ValueError("Train and test indices exceed dataset length.")
             train_indices = range(train_start, train_start + train_size)
             test_indices = range(train_start + train_size, train_start + train_size + test_size)
@@ -30,7 +30,7 @@ class TimeSeriesCrossValidator:
             evaluation[metric.__class__.__name__] = metric.evaluate(y_test, y_pred)
         return evaluation
 
-    def cross_validate(self, model, X, y, metrics):
+    def cross_validate(self, model, x, y, metrics):
         """Fit the model, make predictions, and calculate metrics."""
         if not (hasattr(model, "fit") and callable(getattr(model, "fit")) and
                 hasattr(model, "predict") and callable(getattr(model, "predict"))):
@@ -41,14 +41,14 @@ class TimeSeriesCrossValidator:
             if not (hasattr(metric, "evaluate") and callable(getattr(metric, "evaluate"))):
                 raise TypeError(f"metric {index} must have an 'evaluate' method.")
         evaluations = []
-        for train_indices, test_indices in self.split(X, y):
-            X_train, X_test = X[train_indices], X[test_indices]
+        for train_indices, test_indices in self.split(x, y):
+            x_train, x_test = x[train_indices], x[test_indices]
             y_train, y_test = y[train_indices], y[test_indices]
             if self.preprocessor:
-                X_train = self.preprocessor.fit_transform(X_train)
-                X_test = self.preprocessor.transform(X_test)
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
+                x_train = self.preprocessor.fit_transform(x_train)
+                x_test = self.preprocessor.transform(x_test)
+            model.fit(x_train, y_train)
+            y_pred = model.predict(x_test)
             evaluation = self.evaluate(y_test, y_pred, metrics)
             evaluations.append(evaluation)
         return evaluations
