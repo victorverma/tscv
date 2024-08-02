@@ -41,8 +41,8 @@ class TimeSeriesCrossValidator:
         x_train, x_test = x[train_indices], x[test_indices]
         y_train, y_test = y[train_indices], y[test_indices]
         if self.preprocessor:
-            x_train = self.preprocessor.fit_transform(x_train)
-            x_test = self.preprocessor.transform(x_test)
+            x_train, y_train = self.preprocessor.fit_transform(x_train, y_train)
+            x_test, y_test = self.preprocessor.transform(x_test, y_test)
         model.fit(x_train, y_train)
         y_pred = model.predict(x_test)
         return self._evaluate(y_test, y_pred, metrics)
