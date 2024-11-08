@@ -47,7 +47,7 @@ class TimeSeriesCrossValidator:
         y_pred = model.predict(x_test)
         return self._evaluate(y_test, y_pred, metrics)
 
-    def cross_validate(self, model, x, y, metrics):
+    def cross_validate(self, model, x, y, metrics, parallelize=None):
         """Fit the model, make predictions, and calculate metrics."""
         if not (hasattr(model, "fit") and callable(model.fit)):
             raise TypeError("model must have a 'fit' method.")
@@ -60,9 +60,14 @@ class TimeSeriesCrossValidator:
                 raise TypeError(f"{metric.__class__.__name__} must have an 'evaluate' method.")
         splits = self._split(x, y)
         evaluations = []
-        with ProcessPoolExecutor(max_workers=self.max_workers, mp_context=get_context("fork")) as executor:
-            future_to_split = {executor.submit(self._process_split, split, x, y, model, metrics): split for split in splits}
-            for future in as_completed(future_to_split):
-                evaluation = future.result()
-                evaluations.append(evaluation)
+
+        if parallelize is None:
+            evaluations = [self._process_split(split, x, y, model, metrics) for split in splits]
+        elif parallelize == "script":
+            with ProcessPoolExecutor(max_workers=self.max_workers, mp_context=get_context("fork")) as executor:
+                future_to_split = {executor.submit(self._process_split, split, x, y, model, metrics): split for split in splits}
+                for future in as_completed(future_to_split):
+                    evaluation = future.result()
+                    evaluations.append(evaluation)
+
         return evaluations
