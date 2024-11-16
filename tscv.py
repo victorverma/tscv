@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.append(os.getcwd())
+import metrics as met
 import numpy as np
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -16,7 +20,7 @@ class TimeSeriesCrossValidator:
             self,
             x: np.ndarray, y: np.ndarray,
             train_starts: list[int], train_size: int, test_starts: list[int], test_size: int,
-            metrics: list
+            metrics: list[met.Metric]
         ) -> None:
         """
         Initialize the cross-validation scheme with data, training/test window creation information, and performance metrics.
@@ -28,7 +32,7 @@ class TimeSeriesCrossValidator:
         :param train_size: Integer giving the size of a training window.
         :param test_starts: List of start indices of the test windows.
         :param test_size: Integer giving the size of a test window.
-        :param metrics: List of Metric instances.
+        :param metrics: List of Metric instances for the performance metrics.
         """
         if x.ndim != 2:
             raise ValueError("x must be 2D.")
@@ -42,9 +46,6 @@ class TimeSeriesCrossValidator:
             raise ValueError("Each test set must start after the corresponding training set.")
         if test_starts[-1] + test_size > x.shape[0]:
             raise ValueError("The index of the last test observation exceeds the index of the last observation.")
-        for metric in metrics:
-            if not (hasattr(metric, "evaluate") and callable(metric.evaluate)):
-                raise TypeError(f"{metric.__class__.__name__} must have an 'evaluate' method.")
         self.x = x
         self.y = y
         self.window_pairs = []
