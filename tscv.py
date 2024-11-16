@@ -2,6 +2,7 @@ import os
 import sys
 sys.path.append(os.getcwd())
 import metrics as met
+import models as mod
 import numpy as np
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -81,7 +82,7 @@ class TimeSeriesCrossValidator:
     def cross_validate(
             self,
             preprocessor,
-            model,
+            model: mod.Model,
             parallelize: Optional[ParallelizationMode] = ParallelizationMode.NONE.value,
             max_workers: Optional[int] = None
         ) -> pd.DataFrame:
@@ -97,9 +98,6 @@ class TimeSeriesCrossValidator:
         for method in ["fit_transform", "transform"]:
             if not (hasattr(preprocessor, method) and callable(getattr(preprocessor, method))):
                 raise TypeError(f"preprocessor must have a '{method}' method.")
-        for method in ["fit", "predict"]:
-            if not (hasattr(model, method) and callable(getattr(model, method))):
-                raise TypeError(f"model must have a '{method}' method.")
         if parallelize != ParallelizationMode.NONE.value and max_workers is None:
             raise ValueError("max_workers cannot be None if parallelize isn't None.")
 
