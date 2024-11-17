@@ -57,7 +57,7 @@ class TimeSeriesCrossValidator:
             self.window_pairs.append((train_indices, test_indices))
         self.metrics = metrics
 
-    def _process_window_pair(self, window_pair, preprocessor: pre.Preprocessor, model) -> dict:
+    def _process_window_pair(self, window_pair: tuple[range, range], preprocessor: pre.Preprocessor, model: mod.Model) -> dict:
         """
         Process a single training-test window pair: preprocess the data, fit the model, make predictions, and compute metrics.
 
