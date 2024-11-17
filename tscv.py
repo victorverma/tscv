@@ -57,13 +57,14 @@ class TimeSeriesCrossValidator:
             self.window_pairs.append((train_indices, test_indices))
         self.metrics = metrics
 
-    def _process_window_pair(self, window_pair: tuple[range, range], preprocessor: pre.Preprocessor, model: mod.Model) -> dict:
+    def _process_window_pair(self, window_pair: tuple[range, range], preprocessor: pre.Preprocessor, models: list[mod.Model]) -> pd.DataFrame:
         """
         Process a single training-test window pair: preprocess the data, fit the model, make predictions, and compute metrics.
 
         :param window_pair: Tuple whose two entries contain the training and test window indices.
         :param preprocessor: Preprocessor instance for preprocessing data before model fitting.
         :param model: Model instance for the model to try.
+        :return: Pandas data frame containing the values of the performance metrics for each model.
         """
         train_indices, test_indices = window_pair
         x_train, x_test = self.x[train_indices], self.x[test_indices]
@@ -72,42 +73,49 @@ class TimeSeriesCrossValidator:
         x_train, y_train = preprocessor.fit_transform(x_train, y_train)
         x_test, y_test = preprocessor.transform(x_test, y_test)
 
-        model.fit(x_train, y_train)
-        y_pred = model.predict(x_test)
-        evaluation = {}
-        for metric in self.metrics:
-            evaluation[metric.__class__.__name__] = metric.evaluate(y_test, y_pred)
+        evaluations = []
+        for model in models:
+            model.fit(x_train, y_train)
+            y_pred = model.predict(x_test)
+            evaluation = {
+                "train_start": train_indices[0], "train_end": train_indices[-1],
+                "test_start": test_indices[0], "test_end": test_indices[-1],
+                "model": model.__class__.__name__
+            }
+            for metric in self.metrics:
+                evaluation[metric.__class__.__name__] = metric.evaluate(y_test, y_pred)
+            evaluations.append(evaluation)
 
-        return evaluation
+        return pd.DataFrame(evaluations)
 
     def cross_validate(
             self,
             preprocessor: pre.Preprocessor,
-            model: mod.Model,
+            models: list[mod.Model],
             parallelize: Optional[ParallelizationMode] = ParallelizationMode.NONE.value,
             max_workers: Optional[int] = None
         ) -> pd.DataFrame:
         """
-        Perform time series cross-validation with a given preprocessor and model.
+        Perform time series cross-validation with a given preprocessor and given models.
 
         :param preprocessor: Preprocessor instance for preprocessing data before model fitting.
-        :param model: Model instance for the model to try.
+        :param models: List of Model instances for the models to try.
         :param parallelize: ParallelizationMode value indicating whether/how to process training-test window pairs in parallel.
         :param max_workers: Integer giving the maximum number of workers to use when parallelization is desired.
-        :return: Pandas data frame containing the values of the performance metrics for each pair of model and test window.
+        :return: Pandas data frame containing the values of the performance metrics for each pair of test window and model.
         """
         if parallelize != ParallelizationMode.NONE.value and max_workers is None:
             raise ValueError("max_workers cannot be None if parallelize isn't None.")
 
         evaluations = []
         if parallelize == ParallelizationMode.NONE.value:
-            evaluations = [self._process_window_pair(window_pair, preprocessor, model) for window_pair in self.window_pairs]
+            evaluations = [self._process_window_pair(window_pair, preprocessor, models) for window_pair in self.window_pairs]
         elif parallelize == ParallelizationMode.SCRIPT.value:
             with ProcessPoolExecutor(max_workers=max_workers, mp_context=get_context("fork")) as executor:
                 future_to_window_pair = {
-                    executor.submit(self._process_window_pair, window_pair, preprocessor, model): window_pair for window_pair in self.window_pairs
+                    executor.submit(self._process_window_pair, window_pair, preprocessor, models): window_pair for window_pair in self.window_pairs
                 }
                 for future in as_completed(future_to_window_pair):
                     evaluations.append(future.result())
 
-        return pd.DataFrame(evaluations)
+        return pd.concat(evaluations)
