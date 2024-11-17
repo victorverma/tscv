@@ -80,7 +80,7 @@ class TimeSeriesCrossValidator:
             evaluation = {
                 "train_start": train_indices[0], "train_end": train_indices[-1],
                 "test_start": test_indices[0], "test_end": test_indices[-1],
-                "model": model.__class__.__name__
+                "model": model.label
             }
             for metric in self.metrics:
                 evaluation[metric.__class__.__name__] = metric.evaluate(y_test, y_pred)
