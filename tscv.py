@@ -5,6 +5,7 @@ import metrics as met
 import models as mod
 import numpy as np
 import pandas as pd
+import preprocessors as pre
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from enum import Enum
 from multiprocessing import get_context
@@ -56,7 +57,7 @@ class TimeSeriesCrossValidator:
             self.window_pairs.append((train_indices, test_indices))
         self.metrics = metrics
 
-    def _process_window_pair(self, window_pair, preprocessor, model) -> dict:
+    def _process_window_pair(self, window_pair, preprocessor: pre.Preprocessor, model) -> dict:
         """
         Process a single training-test window pair: preprocess the data, fit the model, make predictions, and compute metrics.
 
@@ -81,7 +82,7 @@ class TimeSeriesCrossValidator:
 
     def cross_validate(
             self,
-            preprocessor,
+            preprocessor: pre.Preprocessor,
             model: mod.Model,
             parallelize: Optional[ParallelizationMode] = ParallelizationMode.NONE.value,
             max_workers: Optional[int] = None
@@ -95,9 +96,6 @@ class TimeSeriesCrossValidator:
         :param max_workers: Integer giving the maximum number of workers to use when parallelization is desired.
         :return: Pandas data frame containing the values of the performance metrics for each pair of model and test window.
         """
-        for method in ["fit_transform", "transform"]:
-            if not (hasattr(preprocessor, method) and callable(getattr(preprocessor, method))):
-                raise TypeError(f"preprocessor must have a '{method}' method.")
         if parallelize != ParallelizationMode.NONE.value and max_workers is None:
             raise ValueError("max_workers cannot be None if parallelize isn't None.")
 
