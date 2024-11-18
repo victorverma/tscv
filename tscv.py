@@ -1,14 +1,11 @@
-import os
-import sys
-sys.path.append(os.getcwd())
-import metrics as met
-import models as mod
 import numpy as np
 import pandas as pd
-import preprocessors as pre
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from enum import Enum
+from metric import Metric
+from model import Model
 from multiprocessing import get_context
+from preprocessor import Preprocessor
 from typing import Optional
 
 class ParallelizationMode(Enum):
@@ -22,7 +19,7 @@ class TimeSeriesCrossValidator:
             self,
             x: np.ndarray, y: np.ndarray,
             train_starts: list[int], train_size: int, test_starts: list[int], test_size: int,
-            metrics: list[met.Metric]
+            metrics: list[Metric]
         ) -> None:
         """
         Initialize the cross-validation scheme with data, training/test window creation information, and performance metrics.
@@ -57,7 +54,7 @@ class TimeSeriesCrossValidator:
             self.window_pairs.append((train_indices, test_indices))
         self.metrics = metrics
 
-    def _process_window_pair(self, window_pair: tuple[range, range], preprocessor: pre.Preprocessor, models: list[mod.Model]) -> pd.DataFrame:
+    def _process_window_pair(self, window_pair: tuple[range, range], preprocessor: Preprocessor, models: list[Model]) -> pd.DataFrame:
         """
         Process a single training-test window pair: preprocess the data, fit the model, make predictions, and compute metrics.
 
@@ -90,8 +87,8 @@ class TimeSeriesCrossValidator:
 
     def cross_validate(
             self,
-            preprocessor: pre.Preprocessor,
-            models: list[mod.Model],
+            preprocessor: Preprocessor,
+            models: list[Model],
             parallelize: Optional[ParallelizationMode] = ParallelizationMode.NONE.value,
             max_workers: Optional[int] = None
         ) -> pd.DataFrame:

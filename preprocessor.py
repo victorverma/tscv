@@ -26,6 +26,7 @@ class Preprocessor(ABC):
         """
         pass
 
+    @final
     def fit_transform(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Fit the preprocessor to training data and then transform the data with the fitted preprocessor.

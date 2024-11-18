@@ -1,19 +1,8 @@
 import numpy as np
-from abc import ABC, abstractmethod
+from metric import Metric
 from sklearn.metrics import confusion_matrix
 
-class Metric(ABC):
-     """Abstract base class for metrics."""
-     @abstractmethod
-     def evaluate(self, y_obs: np.ndarray, y_pred: np.ndarray) -> float:
-         """
-         Compute the value of the metric using the test response values and their predictions.
-
-         :param y_obs: NumPy array of shape (n,) containing the test response values.
-         :param y_pred: NumPy array of shape (n,) containing the predictions of the test response values.
-         :return: Float that equals the computed value of the metric.
-         """
-         pass
+# Regression Metrics ###########################################################
 
 class MSE(Metric):
      def evaluate(self, y_obs: np.ndarray, y_pred: np.ndarray) -> float:
@@ -22,6 +11,8 @@ class MSE(Metric):
 class MAE(Metric):
      def evaluate(self, y_obs: np.ndarray, y_pred: np.ndarray) -> float:
           return np.mean(np.abs(y_obs - y_pred))
+
+# Classification Metrics #######################################################
 
 class EventRate(Metric):
      def evaluate(self, y_obs: np.ndarray, y_pred: np.ndarray) -> float:
