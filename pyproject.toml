@@ -23,5 +23,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/victorverma/tscv"
-Issues = "https://github.com/victorverma/tscv/issues"
+Homepage = "https://github.com/victorverma/tscv_pkg"
+Issues = "https://github.com/victorverma/tscv_pkg/issues"
